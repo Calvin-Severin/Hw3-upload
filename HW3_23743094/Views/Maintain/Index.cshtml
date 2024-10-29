@@ -1,0 +1,472 @@
+﻿@model HW3_23743094.Models.HomeViewModel
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5">
+    <div class="row">
+        <!-- Authors  model Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Authors</h3>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createAuthorModal">Create Author</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Surname</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var author in Model.Authors)
+                            {
+                                <tr>
+                                    <td>@author.Name</td>
+                                    <td>@author.Surname</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editAuthorModal-@author.AuthorId">Edit</button>
+                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAuthorModal-@author.AuthorId">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Types Section -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Types</h3>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createTypeModal">Create Type</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var type in Model.Types)
+                            {
+                                <tr>
+                                    <td>@type.Name</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editTypeModal-@type.TypeId">Edit</button>
+                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteTypeModal-@type.TypeId">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Borrows Section -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Borrows</h3>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createBorrowModal">Create Borrow</button>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Student</th>
+                                <th>Book</th>
+                                <th>Taken Date</th>
+                                <th>Brought Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var borrow in Model.BorrowList)
+                            {
+                                <tr>
+                                    <td>@borrow.Student.Name @borrow.Student.Surname</td>
+                                    <td>@borrow.Book.Name</td>
+                                    <td>@borrow.TakenDate.ToShortDateString()</td>
+                                    <td>@(borrow.BroughtDate.HasValue ? borrow.BroughtDate.Value.ToShortDateString() : "Not Returned")</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm edit-borrow" data-bs-toggle="modal" data-bs-target="#editBorrowModal" data-borrow-id="@borrow.BorrowId">Edit</button>
+                                        <button class="btn btn-danger btn-sm delete-borrow" data-bs-toggle="modal" data-bs-target="#deleteBorrowModal" data-borrow-id="@borrow.BorrowId">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Edit Author Modal -->
+@foreach (var author in Model.Authors)
+{
+    <!-- Edit Author Modal -->
+    <div class="modal fade" id="editAuthorModal-@author.AuthorId" tabindex="-1" aria-labelledby="editAuthorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editAuthorModalLabel">Edit Author</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @Html.Partial("EditAuthor", author)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Author Modal -->
+    <div class="modal fade" id="deleteAuthorModal-@author.AuthorId" tabindex="-1" aria-labelledby="deleteAuthorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteAuthorModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete author "@author.Name @author.Surname"?
+                </div>
+                <div class="modal-footer">
+                    @using (Html.BeginForm("DeleteAuthor", "Maintain", FormMethod.Post))
+                    {
+                        @Html.Hidden("id", author.AuthorId)
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<!-- Create Author Modal -->
+<div class="modal fade" id="createAuthorModal" tabindex="-1" aria-labelledby="createAuthorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createAuthorModalLabel">Create Author</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @Html.Partial("CreateAuthor", new HW3_23743094.Models.Author())
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modals for Types -->
+<div class="modal fade" id="createTypeModal" tabindex="-1" aria-labelledby="createTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTypeModalLabel">Create Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @Html.Partial("CreateType", new HW3_23743094.Models.Type())
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@foreach (var type in Model.Types)
+{
+    <!-- Edit Type Modal -->
+    <div class="modal fade" id="editTypeModal-@type.TypeId" tabindex="-1" aria-labelledby="editTypeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTypeModalLabel">Edit Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @Html.Partial("EditType", type)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Type Modal -->
+    <div class="modal fade" id="deleteTypeModal-@type.TypeId" tabindex="-1" aria-labelledby="deleteTypeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTypeModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete type "@type.Name"?
+                </div>
+                <div class="modal-footer">
+                    @using (Html.BeginForm("DeleteType", "Maintain", FormMethod.Post))
+                    {
+                        @Html.Hidden("id", type.TypeId)
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+<!-- Create Borrow Modal -->
+<div class="modal fade" id="createBorrowModal" tabindex="-1" aria-labelledby="createBorrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createBorrowModalLabel">Create Borrow</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBorrowForm">
+                    @Html.AntiForgeryToken() <!-- Add Anti-Forgery Token -->
+
+                    <div class="form-group">
+                        <label for="StudentId">Student</label>
+                        <select id="StudentId" name="StudentId" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="BookId">Book</label>
+                        <select id="BookId" name="BookId" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="TakenDate">Taken Date</label>
+                        <input type="date" id="TakenDate" name="TakenDate" class="form-control" />
+                    </div>
+
+                    <button type="button" id="submitBorrow" class="btn btn-primary">Create</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+<!-- Edit Borrow Modal -->
+<div class="modal fade" id="editBorrowModal" tabindex="-1" aria-labelledby="editBorrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBorrowModalLabel">Edit Borrow</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBorrowForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editBorrowId" name="BorrowId" />
+
+                    <div class="form-group">
+                        <label for="editStudentId">Student</label>
+                        <select id="editStudentId" name="StudentId" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editBookId">Book</label>
+                        <select id="editBookId" name="BookId" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editTakenDate">Taken Date</label>
+                        <input type="date" id="editTakenDate" name="TakenDate" class="form-control" />
+                    </div>
+
+                    <button type="button" id="submitEditBorrow" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBorrowModal" tabindex="-1" aria-labelledby="deleteBorrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBorrowModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this borrow record?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="confirmDeleteBorrow" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Load student and book data when the modal opens
+    $('#createBorrowModal').on('show.bs.modal', function () {
+        $.getJSON('@Url.Action("GetCreateBorrowData")', function (data) {
+            // Populate student dropdown
+            var studentSelect = $('#StudentId');
+            studentSelect.empty();
+            studentSelect.append('<option value="">Select a Student</option>');
+            $.each(data.students, function (index, student) {
+                studentSelect.append('<option value="' + student.StudentId + '">' + student.Name + '</option>');
+            });
+
+            // Populate book dropdown
+            var bookSelect = $('#BookId');
+            bookSelect.empty();
+            bookSelect.append('<option value="">Select a Book</option>');
+            $.each(data.books, function (index, book) {
+                bookSelect.append('<option value="' + book.BookId + '">' + book.Name + '</option>');
+            });
+        });
+    });
+
+    // Handle form submission
+    $('#submitBorrow').click(function () {
+        var formData = {
+            StudentId: $('#StudentId').val(),
+            BookId: $('#BookId').val(),
+            TakenDate: $('#TakenDate').val(),
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // Include anti-forgery token
+        };
+
+        $.ajax({
+            url: '@Url.Action("CreateBorrow")',
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                if (response.success) {
+                    alert('Borrow record created successfully!');
+                    $('#createBorrowModal').modal('hide');
+                    location.reload(); // Reload page to show new record
+                } else {
+                    alert('Error: ' + response.errors.join(', '));
+                }
+            },
+            error: function (xhr, status, error) {
+                alert('An error occurred: ' + error);
+            }
+        });
+    });
+});
+
+
+$(document).ready(function () {
+    // Load student and book data when the Edit modal opens
+    $('.edit-borrow').click(function () {
+        var borrowId = $(this).data('borrow-id');
+
+        // Fetch data for the selected borrow record
+        $.getJSON('@Url.Action("GetBorrow")', { id: borrowId }, function (data) {
+            if (data) {
+                $('#editBorrowId').val(data.BorrowId);
+                $('#editTakenDate').val(data.TakenDate.split('T')[0]); // Format to yyyy-MM-dd
+
+                // Populate and set the selected value in student dropdown
+                var studentSelect = $('#editStudentId');
+                studentSelect.empty();
+                $.each(data.students, function (index, student) {
+                    var selected = student.id === data.StudentId ? 'selected' : '';
+                    studentSelect.append('<option value="' + student.id + '" ' + selected + '>' + student.name + '</option>');
+                });
+
+                // Populate and set the selected value in book dropdown
+                var bookSelect = $('#editBookId');
+                bookSelect.empty();
+                $.each(data.books, function (index, book) {
+                    var selected = book.id === data.BookId ? 'selected' : '';
+                    bookSelect.append('<option value="' + book.id + '" ' + selected + '>' + book.name + '</option>');
+                });
+            }
+        });
+    });
+
+    // Submit Edit Borrow Form
+    $('#submitEditBorrow').click(function () {
+        var formData = {
+            BorrowId: $('#editBorrowId').val(),
+            StudentId: $('#editStudentId').val(),
+            BookId: $('#editBookId').val(),
+            TakenDate: $('#editTakenDate').val(),
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        };
+
+        $.ajax({
+            url: '@Url.Action("EditBorrow")',
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                if (response.success) {
+                    alert('Borrow record updated successfully!');
+                    $('#editBorrowModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.errors.join(', '));
+                }
+            }
+        });
+    });
+
+    // Delete Borrow - Confirm deletion
+    var deleteBorrowId;
+    $('.delete-borrow').click(function () {
+        deleteBorrowId = $(this).data('borrow-id');
+        $('#deleteBorrowModal').modal('show');
+    });
+
+    // Confirm Delete
+    $('#confirmDeleteBorrow').click(function () {
+        $.ajax({
+            url: '@Url.Action("DeleteBorrow")',
+            type: 'POST',
+            data: {
+                id: deleteBorrowId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert('Borrow record deleted successfully!');
+                    $('#deleteBorrowModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            }
+        });
+    });
+});
+
+</script>
+
+

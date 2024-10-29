@@ -1,0 +1,193 @@
+﻿@model HW3_23743094.Models.HomeViewModel
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+
+<div class="container mt-4">
+    <h2>Current Loans Report</h2>
+    <div class="row">
+        <div class="col-md-8">
+            <table class="table table-striped" id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Book Title</th>
+                        <th>Borrowed Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var borrow in Model.BorrowList)
+                    {
+                        <tr>
+                            <td>@borrow.Student.Name @borrow.Student.Surname</td>
+                            <td>@borrow.Book.Name</td>
+                            <td>@borrow.TakenDate.ToShortDateString()</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Graphical Component for Number of Loans by Student -->
+        <div class="col-md-4">
+            <h5>Books Currently Borrowed per Student</h5>
+            <canvas id="loansChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Section to Save the Report -->
+    <div class="mt-4">
+        <h5>Save Report</h5>
+        <input type="text" id="filename" placeholder="Enter filename" class="form-control w-50 mb-2" />
+        <select id="fileType" class="form-control w-50 mb-2">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+        </select>
+
+        <!-- Rich Text Box for Report Description -->
+        <textarea id="description" placeholder="Enter a description for the report" class="form-control mb-2" rows="5"></textarea>
+
+        <button class="btn btn-primary" onclick="saveReport()">Save</button>
+    </div>
+
+    <!-- Archive Section for Saved Reports -->
+    <div class="mt-5">
+        <h4>Document Archive</h4>
+        <div id="archiveList">
+            <p>No reports saved yet.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize CKEditor for rich text editing
+    CKEDITOR.replace('description');
+
+    // Data for Chart.js
+    const studentNames = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.BorrowList.Select(b => b.Student.Name + ' ' + b.Student.Surname).Distinct()));
+    const studentLoansCount = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(
+        Model.BorrowList.GroupBy(b => b.Student.Name + ' ' + b.Student.Surname)
+                        .Select(g => g.Count())
+    ));
+
+    // Initialize the chart
+    const ctx = document.getElementById('loansChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: studentNames,
+            datasets: [{
+                label: 'Books Borrowed',
+                data: studentLoansCount,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Prepare CSV content using Razor
+    const csvContent = `Student Name,Book Title,Borrowed Date\n
+    @foreach (var borrow in Model.BorrowList)
+    {
+        @($"{borrow.Student.Name} {borrow.Student.Surname},{borrow.Book.Name},{borrow.TakenDate.ToShortDateString()}\n")
+    }`;
+
+    function saveReport() {
+        const { jsPDF } = window.jspdf;
+        const fileType = document.getElementById("fileType").value;
+        const filename = document.getElementById("filename").value || "CurrentLoansReport";
+        const description = CKEDITOR.instances.description.getData(); // Get description from CKEditor
+
+        if (fileType === "pdf") {
+            // Save as PDF using jsPDF and autoTable
+            const doc = new jsPDF();
+            doc.text("Current Loans Report", 10, 10);
+            doc.autoTable({ html: '#reportTable', startY: 20 });
+            doc.text("Description:", 10, doc.lastAutoTable.finalY + 10);
+            doc.text(description, 10, doc.lastAutoTable.finalY + 20); // Append description below the table
+            doc.save(`${filename}.pdf`);
+        } else if (fileType === "csv") {
+            // Save as CSV using the prepared content
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Add report to archive
+        addReportToArchive(filename, fileType, description);
+    }
+
+    // Function to add report to the archive section
+    function addReportToArchive(filename, fileType, description) {
+        const archiveList = document.getElementById("archiveList");
+        const reportItem = document.createElement("div");
+        reportItem.classList.add("mb-2");
+        reportItem.innerHTML = `
+            <p><strong>Filename:</strong> ${filename}.${fileType} <br>
+               <strong>Description:</strong> ${description || "No description provided"}</p>
+               <button class="btn btn-sm btn-success download-btn" data-filename="${filename}" data-filetype="${fileType}">Download</button>
+               <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+        `;
+        archiveList.appendChild(reportItem);
+
+        // Remove "No reports saved yet." message if present
+        if (archiveList.querySelector("p").textContent === "No reports saved yet.") {
+            archiveList.querySelector("p").remove();
+        }
+
+        // Add event listeners to Download and Delete buttons
+        reportItem.querySelector(".download-btn").addEventListener("click", () => {
+            handleDownload(filename, fileType);
+        });
+        reportItem.querySelector(".delete-btn").addEventListener("click", () => {
+            reportItem.remove();
+            if (!archiveList.hasChildNodes()) {
+                archiveList.innerHTML = "<p>No reports saved yet.</p>";
+            }
+        });
+    }
+
+    function handleDownload(filename, fileType) {
+        if (fileType === "pdf") {
+            const doc = new jsPDF();
+            doc.text("Current Loans Report", 10, 10);
+            doc.autoTable({ html: '#reportTable', startY: 20 });
+
+            // Adding a placeholder for description if needed
+            const description = CKEDITOR.instances.description.getData();
+            if (description) {
+                doc.text("Description:", 10, doc.lastAutoTable.finalY + 10);
+                doc.text(description, 10, doc.lastAutoTable.finalY + 20);
+            }
+
+            doc.save(`${filename}.pdf`);
+        } else if (fileType === "csv") {
+            const csvContent = generateCsvContent();
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+
+            // Create a temporary download link and simulate a click
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+</script>
